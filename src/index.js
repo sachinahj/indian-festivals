@@ -5,6 +5,7 @@ const ALLOWED = new Set([
   "Diwali",
   "Holi",
   "Karva Chauth",
+  "Naraka Chaturdashi",
   "Raksha Bandhan",
   "Sharad Navratri"
 ]);
