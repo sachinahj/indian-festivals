@@ -8,6 +8,7 @@ const FESTIVALS = [
     "Ganesh Chaturthi",
     "Holi",
     "Karva Chauth",
+    "Maha Navami",
 
     ["Krishna Janmashtami", "Janmashtami"],
     ["Naraka Chaturdashi", "Choti Diwali"],
