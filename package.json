@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "A Cloudflare Worker serving five selected Atlanta Hindu festivals as an iCalendar feed.",
+  "description": "A Cloudflare Worker serving selected Atlanta Hindu festivals as an iCalendar feed.",
   "scripts": {
     "test": "node --test",
     "dev": "wrangler dev",

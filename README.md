@@ -1,6 +1,6 @@
 # Indian Festivals Calendar
 
-A Cloudflare Worker that filters the [Panchangya Atlanta calendar](https://panchangya.com/en/ical/atlanta-us/festivals.ics) to Diwali, Holi, Karva Chauth, Raksha Bandhan, and Sharad Navratri.
+A Cloudflare Worker that filters the [Panchangya Atlanta calendar](https://panchangya.com/en/ical/atlanta-us/festivals.ics) to Diwali, Holi, Karva Chauth, Naraka Chaturdashi (displayed as Choti Diwali), Raksha Bandhan (Rakhi), and Sharad Navratri (Navratri).
 
 ## Local development
 
@@ -37,7 +37,9 @@ Push this project to GitHub or GitLab and connect it through Cloudflare Workers 
 
 ## Behavior and customization
 
-Edit `SOURCE` and `ALLOWED` in `src/index.js` to change the source or selected festivals. Matching is exact and case-sensitive on the event's `SUMMARY`; descriptions and locations do not affect selection. Edit the calendar name and description in the same file if changing cities.
+Edit `SOURCE` and `FESTIVALS` in `src/index.js` to change the source or selected festivals. Matching is exact and case-sensitive on the event's `SUMMARY`; descriptions and locations do not affect selection. Edit the calendar name and description in the same file if changing cities.
+
+`FESTIVALS` controls both selection and renaming. Use a string such as `"Holi"` to keep a name or a two-item array such as `["Naraka Chaturdashi", "Choti Diwali"]` to rename it. Remove an entry to exclude that festival. Renaming changes only the event summary; dates, UID, descriptions, locations, and alarm summaries stay unchanged.
 
 Each request fetches the upstream feed; successful responses advertise a one-hour public cache lifetime. Invalid calendars, no matching events, and upstream failures return 502 with `Cache-Control: no-store`. HEAD responses never include a body, including on errors.
 

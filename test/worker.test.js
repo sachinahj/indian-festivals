@@ -49,6 +49,32 @@ test("filters only event summaries, supporting parameters and folded values", as
   assert.doesNotMatch(body, /UID:drop/);
 });
 
+test("renames only selected event summaries while preserving event identity and other fields", async t => {
+  const properties = [
+    'SUMMARY;ALTREP="https://example.com/title";LANGUAGE=en:Naraka ',
+    " Chaturdashi",
+    "DESCRIPTION:Naraka Chaturdashi",
+    "LOCATION:Naraka Chaturdashi",
+    "BEGIN:VALARM", "ACTION:DISPLAY", "TRIGGER:-PT1H",
+    "SUMMARY:Naraka Chaturdashi", "DESCRIPTION:Reminder", "END:VALARM",
+  ];
+  t.mock.method(globalThis, "fetch", async () => new Response(calendar(
+    event("rename", properties), event("unchanged", ["SUMMARY:Diwali"]),
+    event("excluded", ["SUMMARY:Other", "DESCRIPTION:Naraka Chaturdashi"]),
+  )));
+  const response = await worker.fetch(request());
+  const body = (await response.text()).replace(/\r\n[ \t]/g, "");
+  const expected = event("rename", [
+    'SUMMARY;ALTREP="https://example.com/title";LANGUAGE=en:Choti Diwali',
+    ...properties.slice(2),
+  ]).join("\r\n");
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("X-Festival-Count"), "2");
+  assert.ok(body.includes(expected));
+  assert.ok(body.includes(event("unchanged", ["SUMMARY:Diwali"]).join("\r\n")));
+  assert.doesNotMatch(body, /UID:excluded/);
+});
+
 test("folds UTF-8 lines without changing values and preserves timezones after events", async t => {
   const description = "DESCRIPTION:" + "🪔हिन्दी".repeat(30);
   const input = calendar(event("keep", ["SUMMARY:Diwali", description]), [

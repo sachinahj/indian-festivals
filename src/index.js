@@ -1,14 +1,19 @@
 const SOURCE =
   "https://panchangya.com/en/ical/atlanta-us/festivals.ics";
 
-const ALLOWED = new Set([
+// Strings keep the upstream name; [upstream name, display name] pairs rename it.
+const FESTIVALS = [
   "Diwali",
   "Holi",
   "Karva Chauth",
-  "Naraka Chaturdashi",
-  "Raksha Bandhan",
-  "Sharad Navratri"
-]);
+  ["Naraka Chaturdashi", "Choti Diwali"],
+  ["Raksha Bandhan", "Rakhi"],
+  ["Sharad Navratri", "Navratri"],
+];
+
+const festivalNames = new Map(FESTIVALS.map(festival =>
+  typeof festival === "string" ? [festival, festival] : festival
+));
 
 // Find the value separator without treating colons inside quoted parameters as separators.
 function property(line) {
@@ -17,6 +22,7 @@ function property(line) {
     if (line[i] === '"') quoted = !quoted;
     if (line[i] === ":" && !quoted) {
       return {
+        prefix: line.slice(0, i),
         name: line.slice(0, i).split(";")[0].toUpperCase(),
         value: line.slice(i + 1),
       };
@@ -75,6 +81,17 @@ function serialize(component) {
   ];
 }
 
+function renameSummary(event, name) {
+  const escaped = name.replace(/\\/g, "\\\\")
+    .replace(/\r\n|\r|\n/g, "\\n")
+    .replace(/[,;]/g, character => "\\" + character);
+  event.entries = event.entries.map(entry => {
+    if (typeof entry !== "string") return entry;
+    const parsed = property(entry);
+    return parsed.name === "SUMMARY" ? `${parsed.prefix}:${escaped}` : entry;
+  });
+}
+
 // Fold at 75 UTF-8 octets, including the continuation space, without splitting characters.
 function foldLine(line) {
   const encoder = new TextEncoder();
@@ -131,15 +148,20 @@ export default {
       let count = 0;
       calendar.entries = calendar.entries.filter(entry => {
         if (typeof entry === "string" || entry.name !== "VEVENT") return true;
-        const selected = ALLOWED.has(summaryValue(entry));
-        if (selected) count++;
+        const summary = summaryValue(entry);
+        const selected = festivalNames.has(summary);
+        if (selected) {
+          count++;
+          const displayName = festivalNames.get(summary);
+          if (displayName !== summary) renameSummary(entry, displayName);
+        }
         return selected;
       });
       if (count === 0) throw new Error("No matching festival events found");
 
       const metadata = {
-        "X-WR-CALNAME": "Indian Festivals - Atlanta",
-        "X-WR-CALDESC": "Five selected Atlanta Hindu festivals",
+        "X-WR-CALNAME": "Indian Festivals",
+        "X-WR-CALDESC": "Filtered Indian Festivals (Atlanta, GA)",
       };
       calendar.entries = calendar.entries.filter(entry =>
         typeof entry !== "string" || !Object.hasOwn(metadata, property(entry).name));
