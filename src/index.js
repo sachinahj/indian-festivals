@@ -3,12 +3,17 @@ const SOURCE =
 
 // Strings keep the upstream name; [upstream name, display name] pairs rename it.
 const FESTIVALS = [
+    "Dhanteras",
     "Diwali",
+    "Ganesh Chaturthi",
     "Holi",
     "Karva Chauth",
+
+    ["Krishna Janmashtami", "Janmashtami"],
     ["Naraka Chaturdashi", "Choti Diwali"],
     ["Raksha Bandhan", "Rakhi"],
     ["Sharad Navratri", "Navratri"],
+    ["Vijayadashami", "Dussehra"],
 ];
 
 const festivalNames = new Map(FESTIVALS.map(festival =>
