@@ -31,6 +31,17 @@ test("browser navigation shows a message without fetching the calendar", async t
   assert.equal(fetchMock.mock.callCount(), 0);
 });
 
+test("browser page displays the runtime commit SHA with a safe fallback", async () => {
+  for (const sha of ["0123456789abcdef0123456789abcdef01234567", undefined, "", "<script>alert(1)</script>"]) {
+    const response = await worker.fetch(new Request("https://example.com", {
+      headers: { Accept: "text/html" },
+    }), { COMMIT_SHA: sha });
+    const expected = sha?.length === 40 ? sha : "local development";
+    assert.ok((await response.text()).includes(`<h1>Filtered Indian Festivals!</h1><p><code>${expected}</code></p>`));
+    assert.equal(response.headers.get("Cache-Control"), "no-store");
+  }
+});
+
 test("filters only event summaries, supporting parameters and folded values", async t => {
   const input = calendar(
     event("keep-1", ['SUMMARY;ALTREP="https://example.com/title";LANGUAGE=en:Diwali']),
@@ -88,7 +99,7 @@ test("folds UTF-8 lines without changing values and preserves timezones after ev
   assert.doesNotMatch(body, /(?<!\r)\n/);
   assert.ok(body.replace(/\r\n[ \t]/g, "").includes(description));
   assert.match(body, /BEGIN:VTIMEZONE/);
-  assert.match(body, /X-WR-CALNAME:Indian Festivals - Atlanta/);
+  assert.match(body, /X-WR-CALNAME:Indian Festivals\r\n/);
 });
 
 test("upstream failures return uncached 502 without exposing upstream body", async t => {

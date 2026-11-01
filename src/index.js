@@ -110,7 +110,7 @@ function foldLine(line) {
 }
 
 export default {
-  async fetch(request) {
+  async fetch(request, env = {}) {
     if (!["GET", "HEAD"].includes(request.method)) {
       return new Response("Method not allowed", {
         status: 405,
@@ -122,11 +122,14 @@ export default {
     if (request.headers.get("Accept")?.split(",").some(type =>
       type.split(";")[0].trim().toLowerCase() === "text/html"
     )) {
+      const commitSha = typeof env.COMMIT_SHA === "string" && /^[a-f0-9]{40}$/i.test(env.COMMIT_SHA)
+        ? env.COMMIT_SHA : "local development";
       return new Response(
-        request.method === "HEAD" ? null : "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"><title>Filtered Indian Festivals!</title></head><body><h1>Filtered Indian Festivals!</h1></body></html>",
+        request.method === "HEAD" ? null : `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Filtered Indian Festivals!</title></head><body><h1>Filtered Indian Festivals!</h1><p><code>${commitSha}</code></p></body></html>`,
         {
           headers: {
             "Content-Type": "text/html; charset=utf-8",
+            "Cache-Control": "no-store",
             "Vary": "Accept",
           },
         }

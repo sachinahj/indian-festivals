@@ -33,9 +33,17 @@ The Worker name is configured in `wrangler.jsonc`. No secrets, database, or sche
 
 ## Deploy from a Git repository
 
-Push this project to GitHub or GitLab and connect it through Cloudflare Workers Builds. Use the repository root as the root directory, leave the build command empty, and use `npm run deploy` as the deploy command. See the [Workers Builds configuration documentation](https://developers.cloudflare.com/workers/ci-cd/builds/configuration/).
+Push this project to GitHub or GitLab and connect it through Cloudflare Workers Builds. Use the repository root as the root directory, leave the build command empty, and set the deploy command to:
+
+```sh
+npx wrangler deploy --var "COMMIT_SHA:$WORKERS_CI_COMMIT_SHA"
+```
+
+This passes Cloudflare's build-time commit SHA to the Worker as a runtime variable. See the [Workers Builds configuration documentation](https://developers.cloudflare.com/workers/ci-cd/builds/configuration/).
 
 ## Behavior and customization
+
+The browser page displays `env.COMMIT_SHA` below the heading. Without a valid full commit SHA, it displays `local development`. No custom build step is needed.
 
 Edit `SOURCE` and `FESTIVALS` in `src/index.js` to change the source or selected festivals. Matching is exact and case-sensitive on the event's `SUMMARY`; descriptions and locations do not affect selection. Edit the calendar name and description in the same file if changing cities.
 
