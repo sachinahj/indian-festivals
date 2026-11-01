@@ -1,19 +1,31 @@
 # Indian Festivals Calendar
 
-A Cloudflare Worker that filters the [Panchangya Atlanta calendar](https://panchangya.com/en/ical/atlanta-us/festivals.ics) to Diwali, Holi, Karva Chauth, Naraka Chaturdashi (displayed as Choti Diwali), Raksha Bandhan (Rakhi), and Sharad Navratri (Navratri).
+A Cloudflare Worker that filters the [Panchangya Atlanta calendar](https://panchangya.com/en/ical/atlanta-us/festivals.ics) to the festivals selected in [`FESTIVALS`](src/index.js).
 
-## Local development
+## Development and checks
 
-Install Node.js 22 or newer, then run:
+Requires Node.js 22 or newer.
 
 ```sh
-npm install
+npm ci
 npm run dev
 ```
 
-Open `http://localhost:8787/indian-festivals.ics` in Chrome to see “Filtered Indian Festivals!”. Requests accepting `text/html` receive this page; calendar clients receive the ICS feed at the same URL. Every path supports this behavior. HEAD returns headers without a body. Other methods return 405. The browser message does not check upstream calendar availability.
+Open `http://localhost:8787/indian-festivals.ics`. Browsers show the commit SHA (or `local development`) without fetching upstream; calendar clients receive the ICS feed.
 
-## Deploy
+| Command | Purpose |
+| --- | --- |
+| `npm test` | Run offline tests, then live upstream validation if they pass |
+| `node --test` | Run only the offline tests |
+| `npm run validate:upstream` | Check the live upstream calendar once |
+| `npm run check` | Deployment dry run without publishing |
+| `npm run tail` | Stream deployed Worker logs |
+
+Run `npm test` before pushing. Live validation checks that every configured upstream name has at least one match anywhere in the feed, reports missing names, and exits nonzero for missing matches, invalid data, or fetch failures. It has a 30-second timeout.
+
+## Deployment
+
+For a manual deploy:
 
 ```sh
 npx wrangler login
@@ -21,36 +33,24 @@ npm run check
 npm run deploy
 ```
 
-Wrangler prints the deployed URL. Subscribe in your calendar application using:
-
-```text
-https://indian-festivals.<your-subdomain>.workers.dev/indian-festivals.ics
-```
-
-Use a calendar subscription (subscribe by URL) for ongoing updates. Importing a downloaded file only creates a snapshot. Calendar applications control their own refresh intervals.
-
-The Worker name is configured in `wrangler.jsonc`. No secrets, database, or scheduled trigger are required. See Cloudflare's [Wrangler configuration documentation](https://developers.cloudflare.com/workers/wrangler/configuration/) for account and routing options.
-
-## Deploy from a Git repository
-
-Push this project to GitHub or GitLab and connect it through Cloudflare Workers Builds. Use the repository root as the root directory, leave the build command empty, and set the deploy command to:
+For Git deployments, connect the repository through [Cloudflare Workers Builds](https://developers.cloudflare.com/workers/ci-cd/builds/configuration/). Use the repository root, leave the build command empty, and set the deploy command to:
 
 ```sh
 npx wrangler deploy --var "COMMIT_SHA:$WORKERS_CI_COMMIT_SHA"
 ```
 
-This passes Cloudflare's build-time commit SHA to the Worker as a runtime variable. See the [Workers Builds configuration documentation](https://developers.cloudflare.com/workers/ci-cd/builds/configuration/).
+This supplies the commit SHA shown on the browser page.
 
-## Behavior and customization
+Subscribe to the deployed feed in your calendar app using your Cloudflare subdomain:
 
-The browser page displays `env.COMMIT_SHA` below the heading. Without a valid full commit SHA, it displays `local development`. No custom build step is needed.
+```text
+https://indian-festivals.<your-subdomain>.workers.dev/indian-festivals.ics
+```
 
-Edit `SOURCE` and `FESTIVALS` in `src/index.js` to change the source or selected festivals. Matching is exact and case-sensitive on the event's `SUMMARY`; descriptions and locations do not affect selection. Edit the calendar name and description in the same file if changing cities.
+Use a URL subscription for ongoing updates; importing a downloaded file creates a snapshot.
 
-`FESTIVALS` controls both selection and renaming. Use a string such as `"Holi"` to keep a name or a two-item array such as `["Naraka Chaturdashi", "Choti Diwali"]` to rename it. Remove an entry to exclude that festival. Renaming changes only the event summary; dates, UID, descriptions, locations, and alarm summaries stay unchanged.
+## Customization
 
-Each request fetches the upstream feed; successful responses advertise a one-hour public cache lifetime. Invalid calendars, no matching events, and upstream failures return 502 with `Cache-Control: no-store`. HEAD responses never include a body, including on errors.
+Edit `SOURCE` and `FESTIVALS` in [`src/index.js`](src/index.js). Use `"Holi"` to keep a name or `["Naraka Chaturdashi", "Choti Diwali"]` to rename it. Matching is case-sensitive on the upstream event summary; renaming preserves the event's other fields. If changing cities, also update the calendar name and description in that file.
 
-Summary parameters (such as `LANGUAGE=en`) and folded lines are supported. Only the event's own summary is matched; alarm summaries are ignored. Calendar components such as timezones are preserved, and output lines are folded to at most 75 UTF-8 bytes with CRLF line endings.
-
-`npm test` runs regression tests without network access. `npm run check` performs a deployment dry run without publishing. `npm run tail` streams logs from the deployed Worker.
+Worker settings, including its deployed name, are in [`wrangler.jsonc`](wrangler.jsonc).

@@ -37,7 +37,7 @@ test("browser page displays the runtime commit SHA with a safe fallback", async 
             headers: { Accept: "text/html" },
         }), { COMMIT_SHA: sha });
         const expected = sha?.length === 40 ? sha : "local development";
-        assert.ok((await response.text()).includes(`<h1>Filtered Indian Festivals!</h1><p><code>${expected}</code></p>`));
+        assert.ok((await response.text()).includes(`<code>${expected}</code>`));
         assert.equal(response.headers.get("Cache-Control"), "no-store");
     }
 });

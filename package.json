@@ -5,7 +5,8 @@
     "type": "module",
     "description": "A Cloudflare Worker serving selected Atlanta Hindu festivals as an iCalendar feed.",
     "scripts": {
-        "test": "node --test",
+        "validate:upstream": "node scripts/validate-upstream.js",
+        "test": "node --test && npm run validate:upstream",
         "dev": "wrangler dev",
         "deploy": "wrangler deploy",
         "check": "wrangler deploy --dry-run",
